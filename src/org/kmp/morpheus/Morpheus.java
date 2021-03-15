@@ -1,4 +1,4 @@
-package org.kmp;
+package org.kmp.morpheus;
 
 import processing.core.PApplet;
 import processing.core.PVector;
