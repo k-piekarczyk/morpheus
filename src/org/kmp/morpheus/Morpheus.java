@@ -3,64 +3,82 @@ package org.kmp.morpheus;
 import processing.core.PApplet;
 import processing.core.PVector;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Level;
+
 public class Morpheus extends PApplet {
 
-    PVector[] box = new PVector[8];
-    float mv = 0;
+    float[][] box = new float[][]{
+            {0, 0, 200, 1},
+//            {-50, 50, 50, 1},
+//            {50, -50, 50, 1},
+//            {-50, -50, 50, 1},
+//            {50, 50, -50, 1},
+//            {-50, 50, -50, 1},
+//            {50, -50, -50, 1},
+//            {-50, -50, -50, 1},
+    };
+
+    float[] position = new float[]{0.0f, 0.0f, 0.0f}; // x, y, z
+    float[] rotation = new float[]{0.0f, 0.0f, 0.0f}; // x, y, x
 
     public void settings() {
         size(500, 500);
     }
 
-    public void draw() {
+    public void setup() {
         background(0);
-        translate(width / 2, height / 2);
+    }
+
+    public void draw() {
+
+        translate(width / 2f, height / 2f);
         stroke(255);
         strokeWeight(4);
         noFill();
+//        if (keyPressed) {
+//            if (key == CODED) {
+//                if (keyCode == UP) {
+//                    position = MatrixUtil.add(position, new float[]{0, 0, 0.2f});
+//                }
+//                if (keyCode == DOWN) {
+//                    position = MatrixUtil.add(position, new float[]{0, 0, -0.2f});
+//                }
+//                if (keyCode == LEFT) {
+//                    position = MatrixUtil.add(position, new float[]{0.2f, 0, 0});
+//                }
+//                if (keyCode == RIGHT) {
+//                    position = MatrixUtil.add(position, new float[]{-0.2f, 0, 0});
+//                }
+//            }
+//        }
 
-        box[0] = new PVector(50 + mv, 50, 50);
-        box[1] = new PVector(-50 + mv, 50, 50);
-        box[2] = new PVector(50 + mv, -50, 50);
-        box[3] = new PVector(-50 + mv, -50, 50);
-        box[4] = new PVector(50 + mv, 50, -50);
-        box[5] = new PVector(-50 + mv, 50, -50);
-        box[6] = new PVector(50 + mv, -50, -50);
-        box[7] = new PVector(-50 + mv, -50, -50);
+        float[][] translationMatrix = MatrixUtil.translationMatrix(position);
+        float[][] compoundRotationMatrix = MatrixUtil.compoundRotationMatrix(rotation);
 
-        for (PVector p : box) {
-            point(p.x + (p.x * 5 / (1 - p.z)), p.y + (p.y * 5 / (1 - p.z)));
+//        float[][] cameraTransformMatrix = MatrixUtil.multiply(compoundRotationMatrix, translationMatrix);
+
+        float[][] projectedBox = new float[box.length][box[0].length];
+
+        for (int i = 0; i < projectedBox.length; i++) {
+//            projectedBox[i] = MatrixUtil.multiply(translationMatrix, box[i]);
+            projectedBox[i] = MatrixUtil.multiply(compoundRotationMatrix, box[i]);
         }
 
-        mv += 0.5;
+        for (float[] p : projectedBox) {
+            point(p[0], p[1]);
+        }
+
+//        System.out.println(Arrays.toString(rotation));
+        rotation[0] += .005;
+//        rotation[1] += .005;
+//        rotation[2] += .005;
     }
 
     public static void main(String[] args) {
-//        String[] processingArgs = {"Morpheus"};
-//        Morpheus morpheus = new Morpheus();
-//        PApplet.runSketch(processingArgs, morpheus);
-
-        float[][] mat1 = new float[][]{
-                new float[]{1, 2, 3},
-                new float[]{4, 5, 6},
-                new float[]{7, 8, 9},
-        };
-
-        float[][] mat2 = new float[][]{
-                new float[]{1, 2, 3},
-                new float[]{4, 5, 6},
-                new float[]{7, 8, 9},
-        };
-
-        float[] vec1 = new float[]{1, 2, 3};
-
-        float[][] mat3 = MatrixUtil.multiply(mat1, mat2);
-        float[] vec2 = MatrixUtil.multiply(mat1, vec1);
-
-        MatrixUtil.print(mat1);
-        MatrixUtil.print(mat2);
-        MatrixUtil.print(mat3);
-        MatrixUtil.print(vec1);
-        MatrixUtil.print(vec2);
+        String[] processingArgs = {"Morpheus"};
+        Morpheus morpheus = new Morpheus();
+        PApplet.runSketch(processingArgs, morpheus);
     }
 }
