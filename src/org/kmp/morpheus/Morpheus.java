@@ -8,7 +8,7 @@ public class Morpheus extends PApplet {
     Mesh meshCube = new Mesh();
     Matrix matProj = new Matrix();
 
-    PVector cameraPosition = new PVector(2f, 0.6f, -3f);
+    PVector cameraPosition = new PVector(0, 0.6f, -3f);
     PVector cameraRotation = new PVector(0, 0, 0);
 
     public void settings() {
@@ -50,16 +50,21 @@ public class Morpheus extends PApplet {
 
     public void draw() {
         background(0);
-//        translate(width / 2f, height / 2f);
         stroke(255);
         noFill();
 
-        println(cameraRotation);
-        cameraRotation.z += 0.01;
-        cameraRotation.x += 0.002;
-
+        Matrix translationMatrix = new Matrix();
         Matrix zRotationMatrix = new Matrix();
+        Matrix yRotationMatrix = new Matrix();
         Matrix xRotationMatrix = new Matrix();
+
+        translationMatrix.inner[0][0] = 1;
+        translationMatrix.inner[1][1] = 1;
+        translationMatrix.inner[2][2] = 1;
+        translationMatrix.inner[3][0] = -cameraPosition.x;
+        translationMatrix.inner[3][1] = -cameraPosition.y;
+        translationMatrix.inner[3][2] = -cameraPosition.z;
+        translationMatrix.inner[3][3] = 1;
 
         zRotationMatrix.inner[0][0] = (float) Math.cos(cameraRotation.z);
         zRotationMatrix.inner[0][1] = (float) Math.sin(cameraRotation.z);
@@ -67,6 +72,12 @@ public class Morpheus extends PApplet {
         zRotationMatrix.inner[1][1] = (float) Math.cos(cameraRotation.z);
         zRotationMatrix.inner[2][2] = 1;
         zRotationMatrix.inner[3][3] = 1;
+
+        yRotationMatrix.inner[0][0] = (float) Math.cos(cameraRotation.y);
+        yRotationMatrix.inner[0][2] = - (float) Math.sin(cameraRotation.y);
+        yRotationMatrix.inner[1][1] = 1;
+        yRotationMatrix.inner[2][0] = (float) Math.sin(cameraRotation.y);
+        yRotationMatrix.inner[2][2] = (float) Math.cos(cameraRotation.y);
 
         xRotationMatrix.inner[0][0] = 1;
         xRotationMatrix.inner[1][1] = (float) Math.cos(cameraRotation.x);
@@ -76,17 +87,15 @@ public class Morpheus extends PApplet {
         xRotationMatrix.inner[3][3] = 1;
 
         for (Triangle t : meshCube.triangles) {
-            Triangle tTrans = new Triangle(t);
-            tTrans.points[0] = tTrans.points[0].sub(cameraPosition);
-            tTrans.points[1] = tTrans.points[1].sub(cameraPosition);
-            tTrans.points[2] = tTrans.points[2].sub(cameraPosition);
+            Triangle tTrans = translationMatrix.multiply(t);
 
             Triangle tRotZ = zRotationMatrix.multiply(tTrans);
-            Triangle tRotZX = xRotationMatrix.multiply(tRotZ);
+            Triangle tRotZY = yRotationMatrix.multiply(tRotZ);
+            Triangle tRotZYX = xRotationMatrix.multiply(tRotZY);
 
+            Triangle tProj = matProj.multiply(tRotZYX);
 
-            Triangle tProj = matProj.multiply(tRotZX);
-//            Triangle tProj = tTrans;
+            if (tProj == null) continue;
 
             tProj.points[0].x += 1f;
             tProj.points[0].y += 1f;
@@ -101,11 +110,6 @@ public class Morpheus extends PApplet {
             tProj.points[1].y *= 0.5f * (float) height;
             tProj.points[2].x *= 0.5f * (float) width;
             tProj.points[2].y *= 0.5f * (float) height;
-
-////            strokeWeight(10);
-//            for (PVector p : tProj.points) {
-//                point(p.x, p.y);
-//            }
 
             strokeWeight(1);
             line(tProj.points[0].x, tProj.points[0].y, tProj.points[1].x, tProj.points[1].y);

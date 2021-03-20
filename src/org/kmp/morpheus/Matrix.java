@@ -26,6 +26,10 @@ public class Matrix {
             result.x /= w; result.y /= w; result.z /= w;
         }
 
+        if (w < 0f) {
+            return null;
+        }
+
         return result;
     }
 
@@ -33,6 +37,10 @@ public class Matrix {
         PVector t1 = this.multiply(triangle.points[0]);
         PVector t2 = this.multiply(triangle.points[1]);
         PVector t3 = this.multiply(triangle.points[2]);
+
+        if (t1 == null || t2 == null || t3 == null) {
+            return null;
+        }
 
         return new Triangle(t1, t2, t3);
     }
