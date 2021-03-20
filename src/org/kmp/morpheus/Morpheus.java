@@ -4,24 +4,24 @@ import processing.core.PApplet;
 import processing.core.PVector;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.logging.Level;
 
 public class Morpheus extends PApplet {
 
-    float[][] box = new float[][]{
-            {0, 0, 200, 1},
-//            {-50, 50, 50, 1},
-//            {50, -50, 50, 1},
-//            {-50, -50, 50, 1},
-//            {50, 50, -50, 1},
-//            {-50, 50, -50, 1},
-//            {50, -50, -50, 1},
-//            {-50, -50, -50, 1},
+    PVector[] box = new PVector[]{
+            new PVector(50f, 50f, 50f),
+            new PVector(-50f, 50f, 50f),
+            new PVector(50f, -50f, 50f),
+            new PVector(-50f, -50f, 50f),
+            new PVector(50f, 50f, -50f),
+            new PVector(-50f, 50f, -50f),
+            new PVector(50f, -50f, -50f),
+            new PVector(-50f, -50f, -50f),
     };
 
-    float[] position = new float[]{0.0f, 0.0f, 0.0f}; // x, y, z
-    float[] rotation = new float[]{0.0f, 0.0f, 0.0f}; // x, y, x
+    PVector position = new PVector(0f, 0f, -100f);
+    PVector rotation = new PVector(0, 0, 0);
+
+    float f = 50;
 
     public void settings() {
         size(500, 500);
@@ -32,7 +32,7 @@ public class Morpheus extends PApplet {
     }
 
     public void draw() {
-
+        background(0);
         translate(width / 2f, height / 2f);
         stroke(255);
         strokeWeight(4);
@@ -54,25 +54,39 @@ public class Morpheus extends PApplet {
 //            }
 //        }
 
-        float[][] translationMatrix = MatrixUtil.translationMatrix(position);
-        float[][] compoundRotationMatrix = MatrixUtil.compoundRotationMatrix(rotation);
+        float fNear = 0.1f;
+        float fFar = 1000f;
+        float fFov = 90f;
+        float fAspectRatio = (float) height/ (float) width;
+        float fS = 1f / (float) Math.tan((fFov / 2f) / (Math.PI * 180f));
 
-//        float[][] cameraTransformMatrix = MatrixUtil.multiply(compoundRotationMatrix, translationMatrix);
+        Matrix perspectiveMatrix = new Matrix(new float[][]{
+                new float[]{fS * fAspectRatio, 0, 0, 0},
+                new float[]{0, fS, 0 ,0},
+                new float[]{0, 0, -((fFar * fNear) / (fFar - fNear)), -(fFar / (fFar - fNear))},
+                new float[]{0, 0, -1, 0},
+        });
 
-        float[][] projectedBox = new float[box.length][box[0].length];
+        Matrix translationMatrix = Matrix.translationMatrix(position);
+        Matrix compoundRotationMatrix = Matrix.compoundRotationMatrix(rotation);
+
+        Matrix cameraTransformMatrix = perspectiveMatrix.multiply(translationMatrix);
+
+        PVector[] projectedBox = new PVector[box.length];
 
         for (int i = 0; i < projectedBox.length; i++) {
-//            projectedBox[i] = MatrixUtil.multiply(translationMatrix, box[i]);
-            projectedBox[i] = MatrixUtil.multiply(compoundRotationMatrix, box[i]);
+            projectedBox[i] = cameraTransformMatrix.multiply(box[i]);
         }
 
-        for (float[] p : projectedBox) {
-            point(p[0], p[1]);
+        for (PVector p : projectedBox) {
+            System.out.println(p);
+            point(p.x, p.y);
         }
+        System.out.println("Stop");
 
 //        System.out.println(Arrays.toString(rotation));
-        rotation[0] += .005;
-//        rotation[1] += .005;
+//        rotation.x += .005;
+//        rotation.y += .001;
 //        rotation[2] += .005;
     }
 
