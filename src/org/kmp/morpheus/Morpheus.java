@@ -6,10 +6,22 @@ import processing.core.PVector;
 public class Morpheus extends PApplet {
 
     Mesh meshCube = new Mesh();
-    Matrix matProj = new Matrix();
 
-    PVector cameraPosition = new PVector(0, 0.6f, -3f);
+    PVector cameraPosition = new PVector(0, 0f, -3f);
     PVector cameraRotation = new PVector(0, 0, 0);
+
+    float fNear;
+    float fFar;
+    float fFov;
+    float fAspectRatio;
+    float fFovRad;
+
+    float mv = 0.02f;
+    float rv = 0.01f;
+
+    PVector mvx = new PVector(mv, 0, 0);
+    PVector mvy = new PVector(0, mv, 0);
+    PVector mvz = new PVector(0, 0, mv);
 
     public void settings() {
         size(500, 500);
@@ -34,82 +46,62 @@ public class Morpheus extends PApplet {
         meshCube.add(new Triangle(new PVector(1, 0, 1), new PVector(0, 0, 1), new PVector(0, 0, 0)));
         meshCube.add(new Triangle(new PVector(1, 0, 1), new PVector(0, 0, 0), new PVector(1, 0, 0)));
 
-        float fNear = 0.1f;
-        float fFar = 1000.0f;
-        float fFov = 90.0f;
-        float fAspectRatio = (float) height / (float) width;
-        float fFovRad = 1.0f / (float) Math.tan(fFov * 0.5f / 180.0f * Math.PI);
-
-        matProj.inner[0][0] = fAspectRatio * fFovRad;
-        matProj.inner[1][1] = fFovRad;
-        matProj.inner[2][2] = fFar / (fFar - fNear);
-        matProj.inner[3][2] = (-fFar * fNear) / (fFar - fNear);
-        matProj.inner[2][3] = 1.0f;
-        matProj.inner[3][3] = 0.0f;
+        fNear = 0.1f;
+        fFar = 1000.0f;
+        fFov = 90.0f;
+        fAspectRatio = (float) height / (float) width;
+        fFovRad = 1.0f / (float) Math.tan(fFov * 0.5f / 180.0f * Math.PI);
     }
 
     public void draw() {
+        keyBoardRoutine();
+        cameraRoutine();
+    }
+
+    public static void main(String[] args) {
+        String[] processingArgs = {"Morpheus"};
+        Morpheus morpheus = new Morpheus();
+        PApplet.runSketch(processingArgs, morpheus);
+    }
+
+    private void cameraRoutine() {
         background(0);
         stroke(255);
         noFill();
 
-        Matrix translationMatrix = new Matrix();
-        Matrix zRotationMatrix = new Matrix();
-        Matrix yRotationMatrix = new Matrix();
-        Matrix xRotationMatrix = new Matrix();
+        Matrix translationMatrix = Matrix.translationMatrix(cameraPosition);
+        Matrix rotationMatrix = Matrix.rotationMatrix(cameraRotation);
+        Matrix yRecerseMatrix = Matrix.yReverseMatrix();
+        Matrix matProj = new Matrix();
 
-        translationMatrix.inner[0][0] = 1;
-        translationMatrix.inner[1][1] = 1;
-        translationMatrix.inner[2][2] = 1;
-        translationMatrix.inner[3][0] = -cameraPosition.x;
-        translationMatrix.inner[3][1] = -cameraPosition.y;
-        translationMatrix.inner[3][2] = -cameraPosition.z;
-        translationMatrix.inner[3][3] = 1;
+//        matProj.inner[0][0] = fAspectRatio * fFovRad;
+//        matProj.inner[1][1] = fFovRad;
+//        matProj.inner[2][2] = fFar / (fFar - fNear);
+//        matProj.inner[3][2] = (-fFar * fNear) / (fFar - fNear);
+//        matProj.inner[2][3] = 1.0f;
+//        matProj.inner[3][3] = 0.0f;
 
-        zRotationMatrix.inner[0][0] = (float) Math.cos(cameraRotation.z);
-        zRotationMatrix.inner[0][1] = (float) Math.sin(cameraRotation.z);
-        zRotationMatrix.inner[1][0] = -(float) Math.sin(cameraRotation.z);
-        zRotationMatrix.inner[1][1] = (float) Math.cos(cameraRotation.z);
-        zRotationMatrix.inner[2][2] = 1;
-        zRotationMatrix.inner[3][3] = 1;
+        float aspectRatio = (float) width / height;
+        float FOV = 90f;
+        float FOVRadTan = (float) Math.tan(Math.toRadians(FOV / 2));
 
-        yRotationMatrix.inner[0][0] = (float) Math.cos(cameraRotation.y);
-        yRotationMatrix.inner[0][2] = - (float) Math.sin(cameraRotation.y);
-        yRotationMatrix.inner[1][1] = 1;
-        yRotationMatrix.inner[2][0] = (float) Math.sin(cameraRotation.y);
-        yRotationMatrix.inner[2][2] = (float) Math.cos(cameraRotation.y);
+        matProj.inner[0][0] = 1 / (aspectRatio * FOVRadTan);
+        matProj.inner[1][1] = 1 / FOVRadTan;
+        matProj.inner[2][2] = (-fNear - fFar) / (fNear - fFar);
+        matProj.inner[2][3] = 1;
+        matProj.inner[3][2] = (2 * fNear * fFar) / (fNear - fFar);
 
-        xRotationMatrix.inner[0][0] = 1;
-        xRotationMatrix.inner[1][1] = (float) Math.cos(cameraRotation.x);
-        xRotationMatrix.inner[1][2] = (float) Math.sin(cameraRotation.x);
-        xRotationMatrix.inner[2][1] = -(float) Math.sin(cameraRotation.x);
-        xRotationMatrix.inner[2][2] = (float) Math.cos(cameraRotation.x);
-        xRotationMatrix.inner[3][3] = 1;
+        Matrix camProjMat = yRecerseMatrix
+                .multiply(matProj)
+                .multiply(rotationMatrix)
+                .multiply(translationMatrix);
 
         for (Triangle t : meshCube.triangles) {
-            Triangle tTrans = translationMatrix.multiply(t);
-
-            Triangle tRotZ = zRotationMatrix.multiply(tTrans);
-            Triangle tRotZY = yRotationMatrix.multiply(tRotZ);
-            Triangle tRotZYX = xRotationMatrix.multiply(tRotZY);
-
-            Triangle tProj = matProj.multiply(tRotZYX);
+            Triangle tProj = camProjMat.multiply(t);
 
             if (tProj == null) continue;
 
-            tProj.points[0].x += 1f;
-            tProj.points[0].y += 1f;
-            tProj.points[1].x += 1f;
-            tProj.points[1].y += 1f;
-            tProj.points[2].x += 1f;
-            tProj.points[2].y += 1f;
-
-            tProj.points[0].x *= 0.5f * (float) width;
-            tProj.points[0].y *= 0.5f * (float) height;
-            tProj.points[1].x *= 0.5f * (float) width;
-            tProj.points[1].y *= 0.5f * (float) height;
-            tProj.points[2].x *= 0.5f * (float) width;
-            tProj.points[2].y *= 0.5f * (float) height;
+            scaleIntoView(tProj);
 
             strokeWeight(1);
             line(tProj.points[0].x, tProj.points[0].y, tProj.points[1].x, tProj.points[1].y);
@@ -119,9 +111,94 @@ public class Morpheus extends PApplet {
         }
     }
 
-    public static void main(String[] args) {
-        String[] processingArgs = {"Morpheus"};
-        Morpheus morpheus = new Morpheus();
-        PApplet.runSketch(processingArgs, morpheus);
+    private void keyBoardRoutine() {
+        if (keyPressed) {
+            PVector invCameraRotation = new PVector(0, 0, 0).sub(cameraRotation);
+            Matrix invRotationMatrix = Matrix.invRotationMatrix(invCameraRotation);
+
+            switch (key) {
+                case CODED: {
+                    switch (keyCode) {
+                        case LEFT: {
+                            cameraPosition.sub(
+                                    invRotationMatrix.multiply(mvx)
+                            );
+                            break;
+                        }
+                        case RIGHT: {
+                            cameraPosition.add(
+                                    invRotationMatrix.multiply(mvx)
+                            );
+                            break;
+                        }
+                        case UP: {
+                            cameraPosition.add(
+                                    invRotationMatrix.multiply(mvz)
+                            );
+                            break;
+                        }
+                        case DOWN: {
+                            cameraPosition.sub(
+                                    invRotationMatrix.multiply(mvz)
+                            );
+                            break;
+                        }
+                        case SHIFT: {
+                            cameraPosition.add(
+                                    invRotationMatrix.multiply(mvy)
+                            );
+                            break;
+                        }
+                        case CONTROL: {
+                            cameraPosition.sub(
+                                    invRotationMatrix.multiply(mvy)
+                            );
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case 'w': {
+                    cameraRotation.x += rv;
+                    break;
+                }
+                case 's': {
+                    cameraRotation.x -= rv;
+                    break;
+                }
+                case 'a': {
+                    cameraRotation.y += rv;
+                    break;
+                }
+                case 'd': {
+                    cameraRotation.y -= rv;
+                    break;
+                }
+                case 'q': {
+                    cameraRotation.z -= rv;
+                    break;
+                }
+                case 'e': {
+                    cameraRotation.z += rv;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void scaleIntoView(Triangle t) {
+        t.points[0].x += 1f;
+        t.points[0].y += 1f;
+        t.points[1].x += 1f;
+        t.points[1].y += 1f;
+        t.points[2].x += 1f;
+        t.points[2].y += 1f;
+
+        t.points[0].x *= 0.5f * (float) width;
+        t.points[0].y *= 0.5f * (float) height;
+        t.points[1].x *= 0.5f * (float) width;
+        t.points[1].y *= 0.5f * (float) height;
+        t.points[2].x *= 0.5f * (float) width;
+        t.points[2].y *= 0.5f * (float) height;
     }
 }
