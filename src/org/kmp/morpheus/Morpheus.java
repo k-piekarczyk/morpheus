@@ -25,7 +25,7 @@ public class Morpheus extends PApplet {
     float originalY;
 
     public void settings() {
-        size(1000, 700);
+        size(1600, 900);
     }
 
     public void setup() {
