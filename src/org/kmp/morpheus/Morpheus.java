@@ -21,6 +21,9 @@ public class Morpheus extends PApplet {
     PVector mvy = new PVector(0, mv, 0);
     PVector mvz = new PVector(0, 0, mv);
 
+    float originalX;
+    float originalY;
+
     public void settings() {
         size(1000, 700);
     }
@@ -28,19 +31,18 @@ public class Morpheus extends PApplet {
     public void setup() {
         fNear = 0.1f;
         fFar = 1000.0f;
-        fFov = 90.0f;
+        fFov = 75.0f;
 
-        scene.add(new Box(new PVector(2, 0, 0), 1, 2, 1));
+        scene.add(new Box(new PVector(2, 0, 2), 1, 2, 1));
         scene.add(new Box(new PVector(-1, 0, 10), 3, 3, 3));
-        scene.add(new Box(new PVector(0, 0, 0), .5f, .5f, .5f));
-        scene.add(new Box(new PVector(-10, 0, 0), 5, 1, 1));
+        scene.add(new Box(new PVector(0, 0, 2), .5f, .5f, .5f));
+        scene.add(new Box(new PVector(-10, 0, 2), 5, 1, 1));
         scene.add(new Box(new PVector(-5, 0, 5), 5, 2, 3));
         scene.add(new Box(new PVector(-5, 0, -20), 5, 2, 3));
     }
 
     public void draw() {
         keyBoardRoutine();
-
         cameraRoutine();
 
         textSize(14);
@@ -48,6 +50,9 @@ public class Morpheus extends PApplet {
         text("Camera rotation: " + cameraRotation.toString(), 10, 30);
         text("Camera position: " + cameraPosition.toString(), 10, 50);
         text("Field of view: " + fFov, 10, 70);
+
+        originalX = mouseX;
+        originalY = mouseY;
     }
 
     public static void main(String[] args) {
@@ -112,11 +117,21 @@ public class Morpheus extends PApplet {
                 case 'e' -> cameraRotation.z += rv;
                 case 'r' -> fFov -= fv;
                 case 'f' -> fFov += fv;
+                case 'o' -> cameraRotation = new PVector(0, 0,0);
+                case 'p' -> cameraPosition = new PVector(0,0,0);
             }
 
             if (fFov <= 0f) fFov = fv;
             if (fFov >= 180f) fFov = 180f - fv;
         }
+    }
+
+    public void mouseDragged() {
+        float dx = (originalX - mouseX) * 30 / width;
+        float dy = (originalY - mouseY) * 30 / height;
+
+        cameraRotation.y += dx * rv;
+        cameraRotation.x += dy * rv;
     }
 
     private void scaleIntoView(Triangle t) {
