@@ -86,7 +86,6 @@ public class Morpheus extends PApplet {
 
                 strokeWeight(1);
                 line(tProj.points[0].x, tProj.points[0].y, tProj.points[1].x, tProj.points[1].y);
-                line(tProj.points[0].x, tProj.points[0].y, tProj.points[1].x, tProj.points[1].y);
                 line(tProj.points[1].x, tProj.points[1].y, tProj.points[2].x, tProj.points[2].y);
                 line(tProj.points[2].x, tProj.points[2].y, tProj.points[0].x, tProj.points[0].y);
             }
