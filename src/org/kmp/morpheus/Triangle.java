@@ -37,9 +37,24 @@ public class Triangle implements Comparable<Triangle> {
     }
 
     public void setCentroid() {
-        centroid.x = (points[0].x + points[1].x + points[2].x) / 3;
-        centroid.y = (points[0].y + points[1].y + points[2].y) / 3;
-        centroid.z = (points[0].z + points[1].z + points[2].z) / 3;
+        float a = (float) Math.sqrt(Math.pow(points[1].x - points[2].x, 2) + Math.pow(points[1].y - points[2].y, 2) + Math.pow(points[1].z - points[2].z, 2));
+        float b = (float) Math.sqrt(Math.pow(points[2].x - points[0].x, 2) + Math.pow(points[2].y - points[0].y, 2) + Math.pow(points[2].z - points[0].z, 2));
+        float c = (float) Math.sqrt(Math.pow(points[0].x - points[1].x, 2) + Math.pow(points[0].y - points[1].y, 2) + Math.pow(points[0].z - points[1].z, 2));
+
+
+        if (a >= b  && a >= c) {
+            centroid.x = (points[1].x + points[2].x) / 2;
+            centroid.y = (points[1].y + points[2].y) / 2;
+            centroid.z = (points[1].z + points[2].z) / 2;
+        } else if (b >= a  && b >= c) {
+            centroid.x = (points[2].x + points[0].x) / 2;
+            centroid.y = (points[2].y + points[0].y) / 2;
+            centroid.z = (points[2].z + points[0].z) / 2;
+        } else if (c >= b  && c >= a) {
+            centroid.x = (points[0].x + points[1].x) / 2;
+            centroid.y = (points[0].y + points[1].y) / 2;
+            centroid.z = (points[0].z + points[1].z) / 2;
+        }
     }
 
     public void setDistance(PVector origin) {
