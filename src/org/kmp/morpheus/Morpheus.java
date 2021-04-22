@@ -68,8 +68,6 @@ public class Morpheus extends PApplet {
     private void cameraRoutine() {
         background(0);
         stroke(255);
-//        fill(0);
-//        noFill();
 
         Matrix translationMatrix = Matrix.originTranslationMatrix(cameraPosition);
         Matrix rotationMatrix = Matrix.rotationMatrix(cameraRotation);
@@ -102,11 +100,7 @@ public class Morpheus extends PApplet {
                 case "blue" -> fill(0, 0, 255);
                 default -> fill(0);
             }
-            println(t.color);
             strokeWeight(1);
-//            line(t.projectedPoints[0].x, t.projectedPoints[0].y, t.projectedPoints[1].x, t.projectedPoints[1].y);
-//            line(t.projectedPoints[1].x, t.projectedPoints[1].y, t.projectedPoints[2].x, t.projectedPoints[2].y);
-//            line(t.projectedPoints[2].x, t.projectedPoints[2].y, t.projectedPoints[0].x, t.projectedPoints[0].y);
             triangle(
                     t.projectedPoints[0].x, t.projectedPoints[0].y,
                     t.projectedPoints[1].x, t.projectedPoints[1].y,
