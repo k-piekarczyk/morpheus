@@ -56,7 +56,20 @@ public class Matrix {
             return null;
         }
 
-        return new Triangle(t1, t2, t3);
+        return new Triangle(t1, t2, t3, triangle.color);
+    }
+
+    public PVector[] multiply(PVector[] points) {
+        PVector[] np = new PVector[3];
+        np[0] = this.multiply(points[0]);
+        np[1] = this.multiply(points[1]);
+        np[2] = this.multiply(points[2]);
+
+        if (np[0] == null || np[1] == null || np[2] == null) {
+            return null;
+        }
+
+        return np;
     }
 
     public static Matrix yReverseMatrix() {

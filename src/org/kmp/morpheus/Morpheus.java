@@ -3,6 +3,10 @@ package org.kmp.morpheus;
 import processing.core.PApplet;
 import processing.core.PVector;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.ListIterator;
+
 public class Morpheus extends PApplet {
     Scene scene = new Scene();
 
@@ -64,7 +68,8 @@ public class Morpheus extends PApplet {
     private void cameraRoutine() {
         background(0);
         stroke(255);
-        noFill();
+//        fill(0);
+//        noFill();
 
         Matrix translationMatrix = Matrix.originTranslationMatrix(cameraPosition);
         Matrix rotationMatrix = Matrix.rotationMatrix(cameraRotation);
@@ -76,19 +81,37 @@ public class Morpheus extends PApplet {
                 .multiply(rotationMatrix)
                 .multiply(translationMatrix);
 
-        for (Mesh m : scene.meshes) {
-            for (Triangle t : m.triangles) {
-                Triangle tProj = camProjMat.multiply(t);
+        ListIterator<Triangle> iterator = scene.triangles.listIterator();
+        while (iterator.hasNext())
+        {
+            iterator.set(iterator.next().setDistanceByCopy(cameraPosition));
+        }
 
-                if (tProj == null) continue;
+        Collections.sort(scene.triangles);
 
-                scaleIntoView(tProj);
+        for (Triangle t : scene.triangles) {
+            t.projectedPoints = camProjMat.multiply(t.points);
 
-                strokeWeight(1);
-                line(tProj.points[0].x, tProj.points[0].y, tProj.points[1].x, tProj.points[1].y);
-                line(tProj.points[1].x, tProj.points[1].y, tProj.points[2].x, tProj.points[2].y);
-                line(tProj.points[2].x, tProj.points[2].y, tProj.points[0].x, tProj.points[0].y);
+            if (t.projectedPoints == null) continue;
+
+            scaleIntoView(t);
+
+            switch (t.color) {
+                case "red" -> fill(255, 0, 0);
+                case "green" -> fill(0, 255, 0);
+                case "blue" -> fill(0, 0, 255);
+                default -> fill(0);
             }
+            println(t.color);
+            strokeWeight(1);
+//            line(t.projectedPoints[0].x, t.projectedPoints[0].y, t.projectedPoints[1].x, t.projectedPoints[1].y);
+//            line(t.projectedPoints[1].x, t.projectedPoints[1].y, t.projectedPoints[2].x, t.projectedPoints[2].y);
+//            line(t.projectedPoints[2].x, t.projectedPoints[2].y, t.projectedPoints[0].x, t.projectedPoints[0].y);
+            triangle(
+                    t.projectedPoints[0].x, t.projectedPoints[0].y,
+                    t.projectedPoints[1].x, t.projectedPoints[1].y,
+                    t.projectedPoints[2].x, t.projectedPoints[2].y
+            );
         }
     }
 
@@ -116,8 +139,8 @@ public class Morpheus extends PApplet {
                 case 'e' -> cameraRotation.z += rv;
                 case 'r' -> fFov -= fv;
                 case 'f' -> fFov += fv;
-                case 'o' -> cameraRotation = new PVector(0, 0,0);
-                case 'p' -> cameraPosition = new PVector(0,0,0);
+                case 'o' -> cameraRotation = new PVector(0, 0, 0);
+                case 'p' -> cameraPosition = new PVector(0, 0, 0);
             }
 
             if (fFov <= 0f) fFov = fv;
@@ -134,18 +157,18 @@ public class Morpheus extends PApplet {
     }
 
     private void scaleIntoView(Triangle t) {
-        t.points[0].x += 1f;
-        t.points[0].y += 1f;
-        t.points[1].x += 1f;
-        t.points[1].y += 1f;
-        t.points[2].x += 1f;
-        t.points[2].y += 1f;
+        t.projectedPoints[0].x += 1f;
+        t.projectedPoints[0].y += 1f;
+        t.projectedPoints[1].x += 1f;
+        t.projectedPoints[1].y += 1f;
+        t.projectedPoints[2].x += 1f;
+        t.projectedPoints[2].y += 1f;
 
-        t.points[0].x *= 0.5f * (float) width;
-        t.points[0].y *= 0.5f * (float) height;
-        t.points[1].x *= 0.5f * (float) width;
-        t.points[1].y *= 0.5f * (float) height;
-        t.points[2].x *= 0.5f * (float) width;
-        t.points[2].y *= 0.5f * (float) height;
+        t.projectedPoints[0].x *= 0.5f * (float) width;
+        t.projectedPoints[0].y *= 0.5f * (float) height;
+        t.projectedPoints[1].x *= 0.5f * (float) width;
+        t.projectedPoints[1].y *= 0.5f * (float) height;
+        t.projectedPoints[2].x *= 0.5f * (float) width;
+        t.projectedPoints[2].y *= 0.5f * (float) height;
     }
 }
