@@ -28,6 +28,8 @@ public class Morpheus extends PApplet {
     float originalX;
     float originalY;
 
+    Edge currentHLine = new Edge();
+
     public void settings() {
         size(1600, 900);
     }
@@ -43,6 +45,11 @@ public class Morpheus extends PApplet {
         scene.add(new Box(new PVector(-10, 0, 4.5f), 5, 1, .2f));
         scene.add(new Box(new PVector(-5, 0, 5), 5, 2, .2f));
 //        scene.add(new Box(new PVector(-5, 0, -20), 5, 2, .2f));
+
+        currentHLine.start.x = 0;
+        currentHLine.end.x = width;
+        currentHLine.start.y = 0;
+        currentHLine.end.y = 0;
     }
 
     public void draw() {
@@ -106,6 +113,26 @@ public class Morpheus extends PApplet {
                     t.projectedPoints[1].x, t.projectedPoints[1].y,
                     t.projectedPoints[2].x, t.projectedPoints[2].y
             );
+        }
+
+        scene.refreshEdges();
+
+        stroke(255);
+        strokeWeight(1);
+        line(currentHLine.start.x, currentHLine.start.y, currentHLine.end.x, currentHLine.end.y);
+        line(width/2,0,width/2, height);
+        line(0,height/2,width, height/2);
+        circle(width/2, height/2, 10);
+
+        currentHLine.start.y = (currentHLine.start.y + 2) % height;
+        currentHLine.end.y = (currentHLine.end.y + 2) % height;
+
+        for (Edge e : scene.edges) {
+            PVector intersection = currentHLine.findIntersection(e);
+
+            if (intersection != null) {
+                circle(intersection.x, intersection.y, 5);
+            }
         }
     }
 

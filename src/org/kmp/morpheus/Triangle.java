@@ -2,6 +2,9 @@ package org.kmp.morpheus;
 
 import processing.core.PVector;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Triangle implements Comparable<Triangle> {
     public PVector[] points;
     public PVector[] projectedPoints;
@@ -71,5 +74,17 @@ public class Triangle implements Comparable<Triangle> {
     @Override
     public int compareTo(Triangle t) {
         return Float.compare(t.distance, distance);
+    }
+
+    public List<Edge> edgeList() {
+        List<Edge> edgeList = new ArrayList<>();
+
+        if (projectedPoints == null) return edgeList;
+
+        edgeList.add(new Edge(projectedPoints[0], projectedPoints[1], this));
+        edgeList.add(new Edge(projectedPoints[1], projectedPoints[2], this));
+        edgeList.add(new Edge(projectedPoints[2], projectedPoints[0], this));
+
+        return edgeList;
     }
 }
