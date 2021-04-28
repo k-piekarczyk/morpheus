@@ -37,12 +37,12 @@ public class Morpheus extends PApplet {
         fFar = 1000.0f;
         fFov = 75.0f;
 
-        scene.add(new Box(new PVector(2, 0, 2), 1, 2, 1));
-        scene.add(new Box(new PVector(-1, 0, 10), 3, 3, 3));
-        scene.add(new Box(new PVector(0, 0, 2), .5f, .5f, .5f));
-        scene.add(new Box(new PVector(-10, 0, 2), 5, 1, 1));
-        scene.add(new Box(new PVector(-5, 0, 5), 5, 2, 3));
-        scene.add(new Box(new PVector(-5, 0, -20), 5, 2, 3));
+//        scene.add(new Box(new PVector(2, 0, 2), 1, 2, .2f));
+        scene.add(new Box(new PVector(-1, 0, 5.5f), 3, 3, .2f));
+//        scene.add(new Box(new PVector(0, 0, 2), .5f, .5f, .2f));
+        scene.add(new Box(new PVector(-10, 0, 4.5f), 5, 1, .2f));
+        scene.add(new Box(new PVector(-5, 0, 5), 5, 2, .2f));
+//        scene.add(new Box(new PVector(-5, 0, -20), 5, 2, .2f));
     }
 
     public void draw() {
@@ -68,7 +68,7 @@ public class Morpheus extends PApplet {
     private void cameraRoutine() {
         background(0);
         stroke(255);
-
+//        noStroke();
         Matrix translationMatrix = Matrix.originTranslationMatrix(cameraPosition);
         Matrix rotationMatrix = Matrix.rotationMatrix(cameraRotation);
         Matrix matProj = Matrix.perspectiveProjectionMatrix(fFov, fNear, fFar, width, height);
@@ -117,18 +117,18 @@ public class Morpheus extends PApplet {
             switch (key) {
                 case CODED -> {
                     switch (keyCode) {
-                        case LEFT -> cameraPosition.sub(invRotationMatrix.multiply(mvx));
-                        case RIGHT -> cameraPosition.add(invRotationMatrix.multiply(mvx));
-                        case UP -> cameraPosition.add(invRotationMatrix.multiply(mvz));
-                        case DOWN -> cameraPosition.sub(invRotationMatrix.multiply(mvz));
+                        case LEFT -> cameraRotation.y += rv;
+                        case RIGHT -> cameraRotation.y -= rv;
+                        case UP -> cameraRotation.x += rv;
+                        case DOWN -> cameraRotation.x -= rv;
                         case SHIFT -> cameraPosition.add(invRotationMatrix.multiply(mvy));
                         case CONTROL -> cameraPosition.sub(invRotationMatrix.multiply(mvy));
                     }
                 }
-                case 'w' -> cameraRotation.x += rv;
-                case 's' -> cameraRotation.x -= rv;
-                case 'a' -> cameraRotation.y += rv;
-                case 'd' -> cameraRotation.y -= rv;
+                case 'w' -> cameraPosition.add(invRotationMatrix.multiply(mvz));
+                case 's' -> cameraPosition.sub(invRotationMatrix.multiply(mvz));
+                case 'a' -> cameraPosition.sub(invRotationMatrix.multiply(mvx));
+                case 'd' -> cameraPosition.add(invRotationMatrix.multiply(mvx));
                 case 'q' -> cameraRotation.z -= rv;
                 case 'e' -> cameraRotation.z += rv;
                 case 'r' -> fFov -= fv;
