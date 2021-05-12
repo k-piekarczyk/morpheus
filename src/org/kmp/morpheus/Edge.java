@@ -17,43 +17,36 @@ public class Edge {
         this.originTriangle = originTriangle;
     }
 
-    public PVector findIntersection(Edge e) {
-        if (!Line2D.linesIntersect(start.x, start.y, end.x, end.y, e.start.x, e.start.y, e.end.x, e.end.y)) {
-            return null;
-        }
-
-        if (start.x == end.x && start.y == end.y) return null;
-        if (e.start.x == e.end.x && e.start.y == e.end.y) return null;
-
-        if (end.x - start.x == 0) {
-            float m2 = (e.end.y - e.start.y) / (e.end.x - e.start.x);
-            float b2 = e.start.y - m2 * e.start.x;
+    static public PVector findIntersection(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+        if (x2 - x1 == 0) {
+            float m2 = (y4 - y3) / (x4 - x3);
+            float b2 = y3 - m2 * x3;
 
             PVector intersection = new PVector();
 
-            intersection.x = start.x;
+            intersection.x = x1;
             intersection.y = (m2 * intersection.x) + b2;
 
             return intersection;
         }
 
-        if (e.end.x - e.start.x == 0) {
-            float m1 = (end.y - start.y) / (end.x - start.x);
-            float b1 = start.y - m1 * start.x;
+        if (x4 - x3 == 0) {
+            float m1 = (y2 - y1) / (x2 - x1);
+            float b1 = y1 - m1 * x1;
 
             PVector intersection = new PVector();
 
-            intersection.x = e.start.x;
+            intersection.x = x3;
             intersection.y = (m1 * intersection.x) + b1;
 
             return intersection;
         }
 
-        float m1 = (end.y - start.y) / (end.x - start.x);
-        float m2 = (e.end.y - e.start.y) / (e.end.x - e.start.x);
+        float m1 = (y2 - y1) / (x2 - x1);
+        float m2 = (y4 - y3) / (x4 - x3);
 
-        float b1 = start.y - m1 * start.x;
-        float b2 = e.start.y - m2 * e.start.x;
+        float b1 = y1 - m1 * x1;
+        float b2 = y3 - m2 * x3;
 
         PVector intersection = new PVector();
 

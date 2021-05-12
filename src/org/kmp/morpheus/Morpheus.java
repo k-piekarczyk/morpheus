@@ -3,15 +3,17 @@ package org.kmp.morpheus;
 import processing.core.PApplet;
 import processing.core.PVector;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.ListIterator;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Morpheus extends PApplet {
     Scene scene = new Scene();
 
     PVector cameraPosition = new PVector(0, 5.11f, -3f);
     PVector cameraRotation = new PVector(-0.44f, 0.28f, 0);
+
+//    PVector cameraPosition = new PVector(0, 0, -3f);
+//    PVector cameraRotation = new PVector(0, 0, 0);
 
     float fNear;
     float fFar;
@@ -86,20 +88,104 @@ public class Morpheus extends PApplet {
                 .multiply(rotationMatrix)
                 .multiply(translationMatrix);
 
-        ListIterator<Triangle> iterator = scene.triangles.listIterator();
-        while (iterator.hasNext())
-        {
-            iterator.set(iterator.next().setDistanceByCopy(cameraPosition));
+        List<Triangle> filtered = scene.triangles.stream().filter(t -> {
+            PVector pC = cameraPosition.copy();
+            PVector p0 = t.points[0].copy();
+            PVector vPQ = new PVector(t.points[1].x - t.points[0].x, t.points[1].y - t.points[0].y, t.points[1].z - t.points[0].z);
+            PVector vPR = new PVector(t.points[2].x - t.points[0].x, t.points[2].y - t.points[0].y, t.points[2].z - t.points[0].z);
+
+            PVector normal = new PVector();
+            PVector.cross(vPQ, vPR, normal);
+
+            return PVector.dot(normal, PVector.sub(pC, p0)) > 0;
+        })
+                .peek(t -> t.projectedPoints = camProjMat.multiply(t.points)).filter(t -> t.projectedPoints != null)
+                .map(this::scaleIntoViewWithReturn)
+                .collect(Collectors.toList());
+
+        try {
+            scene.triangles.sort((t1, t2) -> {
+                PVector pC = cameraPosition.copy();
+                int count0 = 0;
+                int count1 = 0;
+
+                // First Run
+                PVector p0 = t2.points[0].copy();
+                PVector vPQ = new PVector(t2.points[1].x - t2.points[0].x, t2.points[1].y - t2.points[0].y, t2.points[1].z - t2.points[0].z);
+                PVector vPR = new PVector(t2.points[2].x - t2.points[0].x, t2.points[2].y - t2.points[0].y, t2.points[2].z - t2.points[0].z);
+
+                PVector normal = new PVector();
+                PVector.cross(vPQ, vPR, normal);
+
+                for (PVector point : t1.points) {
+                    PVector l0 = point.copy();
+                    PVector l = PVector.sub(pC, l0);
+
+                    float topPart = PVector.dot(PVector.sub(p0, l0), normal);
+                    float bottomPart = PVector.dot(l, normal);
+
+                    if (bottomPart == 0) {
+                        continue;
+                    }
+
+                    float d = topPart / bottomPart;
+
+                    PVector pI = PVector.add(l0, PVector.mult(l, d));
+
+                    PVector v0 = PVector.sub(l0, pC);
+                    PVector v1 = PVector.sub(pI, pC);
+
+                    if (PVector.dot(v0, v1) < 0) continue;
+
+                    float pC_l0 = pC.dist(l0);
+                    float pC_pI = pC.dist(pI);
+
+                    if (pC_l0 < pC_pI) count0++;
+                }
+
+                // Second Run
+                p0 = t1.points[0].copy();
+                vPQ = new PVector(t1.points[1].x - t1.points[0].x, t1.points[1].y - t1.points[0].y, t1.points[1].z - t1.points[0].z);
+                vPR = new PVector(t1.points[2].x - t1.points[0].x, t1.points[2].y - t1.points[0].y, t1.points[2].z - t1.points[0].z);
+
+                normal = new PVector();
+                PVector.cross(vPQ, vPR, normal);
+
+                for (PVector point : t2.points) {
+                    PVector l0 = point.copy();
+                    PVector l = PVector.sub(pC, l0);
+
+                    float topPart = PVector.dot(PVector.sub(p0, l0), normal);
+                    float bottomPart = PVector.dot(l, normal);
+
+                    if (bottomPart == 0) {
+                        continue;
+                    }
+
+                    float d = topPart / bottomPart;
+
+                    PVector pI = PVector.add(l0, PVector.mult(l, d));
+
+                    PVector v0 = PVector.sub(l0, pC);
+                    PVector v1 = PVector.sub(pI, pC);
+
+                    if (PVector.dot(v0, v1) < 0) continue;
+
+                    float pC_l0 = pC.dist(l0);
+                    float pC_pI = pC.dist(pI);
+
+                    if (pC_l0 < pC_pI) count1++;
+                }
+
+                return Integer.compare(count0, count1);
+            });
+        } catch (Exception ignored) {
+            System.out.println("PANIC!!!");
         }
 
-        Collections.sort(scene.triangles);
+        int tr_count = 0;
+        for (Triangle t : filtered) {
 
-        for (Triangle t : scene.triangles) {
-            t.projectedPoints = camProjMat.multiply(t.points);
-
-            if (t.projectedPoints == null) continue;
-
-            scaleIntoView(t);
 
             switch (t.color) {
                 case "red" -> fill(255, 0, 0);
@@ -113,7 +199,12 @@ public class Morpheus extends PApplet {
                     t.projectedPoints[1].x, t.projectedPoints[1].y,
                     t.projectedPoints[2].x, t.projectedPoints[2].y
             );
+
+            tr_count++;
         }
+        strokeWeight(2);
+        fill(255);
+        text("Triangles on screen: " + tr_count, 10, 90);
     }
 
     private void keyBoardRoutine() {
@@ -171,5 +262,23 @@ public class Morpheus extends PApplet {
         t.projectedPoints[1].y *= 0.5f * (float) height;
         t.projectedPoints[2].x *= 0.5f * (float) width;
         t.projectedPoints[2].y *= 0.5f * (float) height;
+    }
+
+    private Triangle scaleIntoViewWithReturn(Triangle t) {
+        t.projectedPoints[0].x += 1f;
+        t.projectedPoints[0].y += 1f;
+        t.projectedPoints[1].x += 1f;
+        t.projectedPoints[1].y += 1f;
+        t.projectedPoints[2].x += 1f;
+        t.projectedPoints[2].y += 1f;
+
+        t.projectedPoints[0].x *= 0.5f * (float) width;
+        t.projectedPoints[0].y *= 0.5f * (float) height;
+        t.projectedPoints[1].x *= 0.5f * (float) width;
+        t.projectedPoints[1].y *= 0.5f * (float) height;
+        t.projectedPoints[2].x *= 0.5f * (float) width;
+        t.projectedPoints[2].y *= 0.5f * (float) height;
+
+        return t;
     }
 }

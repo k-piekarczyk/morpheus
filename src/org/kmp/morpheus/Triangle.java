@@ -5,7 +5,7 @@ import processing.core.PVector;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Triangle implements Comparable<Triangle> {
+public class Triangle {
     public PVector[] points;
     public PVector[] projectedPoints;
 
@@ -71,24 +71,26 @@ public class Triangle implements Comparable<Triangle> {
         return t;
     }
 
-    @Override
-    public int compareTo(Triangle t) {
-//        return Float.compare(t.distance, distance);
-        PVector vPQ = new PVector(t.points[1].x - t.points[0].x, t.points[1].y - t.points[0].y, t.points[1].z - t.points[0].z);
-        PVector vPR = new PVector(t.points[2].x - t.points[0].x, t.points[2].y - t.points[0].y, t.points[2].z - t.points[0].z);
-
-        PVector perpV = vPQ.cross(vPR);
-        float a = perpV.x;
-        float b = perpV.y;
-        float c = perpV.z;
-        float x0 = vPQ.x;
-        float y0 = vPQ.y;
-        float z0 = vPQ.z;
-
-        // a * (x - x0) + b * (y - y0) + c * (z - z0) = 0
-
-
-    }
+//    @Override
+//    public int compareTo(Triangle t) {
+////        return Float.compare(t.distance, distance);
+//        PVector vPQ = new PVector(t.points[1].x - t.points[0].x, t.points[1].y - t.points[0].y, t.points[1].z - t.points[0].z);
+//        PVector vPR = new PVector(t.points[2].x - t.points[0].x, t.points[2].y - t.points[0].y, t.points[2].z - t.points[0].z);
+//
+//        PVector perpV = vPQ.cross(vPR);
+//        float a = perpV.x;
+//        float b = perpV.y;
+//        float c = perpV.z;
+//        float x0 = vPQ.x;
+//        float y0 = vPQ.y;
+//        float z0 = vPQ.z;
+//
+//        // a * (x - x0) + b * (y - y0) + c * (z - z0) = 0
+//
+//        for (PVector p: points) {
+//
+//        }
+//    }
 
     public List<Edge> edgeList() {
         List<Edge> edgeList = new ArrayList<>();
