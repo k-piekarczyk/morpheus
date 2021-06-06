@@ -9,18 +9,16 @@ import java.util.stream.Collectors;
 public class Morpheus extends PApplet {
     Scene scene = new Scene();
 
-    PVector cameraPosition = new PVector(0, 5.11f, -3f);
-    PVector cameraRotation = new PVector(-0.44f, 0.28f, 0);
+//    PVector cameraPosition = new PVector(0, 5.11f, -3f);
+//    PVector cameraRotation = new PVector(-0.44f, 0.28f, 0);
 
-//    PVector cameraPosition = new PVector(0, 0, -3f);
-//    PVector cameraRotation = new PVector(0, 0, 0);
+    PVector cameraPosition = new PVector(0, 0, 0);
+    PVector cameraRotation = new PVector(0, 0, 0);
 
-    float fNear;
-    float fFar;
     float fFov;
 
-    float mv = 0.02f;
-    float rv = 0.01f;
+    float mv = 0.5f;
+    float rv = 0.05f;
     float fv = 0.5f;
 
     PVector mvx = new PVector(mv, 0, 0);
@@ -30,32 +28,29 @@ public class Morpheus extends PApplet {
     float originalX;
     float originalY;
 
-    Edge currentHLine = new Edge();
+    List<Sphere> sphereList = new ArrayList<>();
 
     public void settings() {
-        size(1600, 900);
+        size(1000, 500);
     }
 
+
+    PVector cameraOrigin = new PVector(0, 0, 0);
+
+
+    float aspectRatio;
+
     public void setup() {
-        fNear = 0.1f;
-        fFar = 1000.0f;
-        fFov = 75.0f;
-
-//        scene.add(new Box(new PVector(2, 0, 2), 1, 2, .2f));
-        scene.add(new Box(new PVector(-1, 0, 5.5f), 3, 3, .2f));
-//        scene.add(new Box(new PVector(0, 0, 2), .5f, .5f, .2f));
-        scene.add(new Box(new PVector(-10, 0, 4.5f), 5, 1, .2f));
-        scene.add(new Box(new PVector(-5, 0, 5), 5, 2, .2f));
-//        scene.add(new Box(new PVector(-5, 0, -20), 5, 2, .2f));
-
-        currentHLine.start.x = 0;
-        currentHLine.end.x = width;
-        currentHLine.start.y = 0;
-        currentHLine.end.y = 0;
+        fFov = 120.0f;
+        aspectRatio = (float) width / height;
+        sphereList.add(new Sphere(0, 0, -10, 4, new Color(255, 0, 0)));
+        sphereList.add(new Sphere(1, 5, -14, 3, new Color(0, 255, 0)));
+        sphereList.add(new Sphere(-3, -2, -5, 1, new Color(0, 0, 255)));
     }
 
     public void draw() {
         keyBoardRoutine();
+//        oldCameraRoutine();
         cameraRoutine();
 
         textSize(14);
@@ -77,134 +72,73 @@ public class Morpheus extends PApplet {
     private void cameraRoutine() {
         background(0);
         stroke(255);
-//        noStroke();
+
         Matrix translationMatrix = Matrix.originTranslationMatrix(cameraPosition);
         Matrix rotationMatrix = Matrix.rotationMatrix(cameraRotation);
-        Matrix matProj = Matrix.perspectiveProjectionMatrix(fFov, fNear, fFar, width, height);
         Matrix yReverseMatrix = Matrix.yReverseMatrix();
 
-        Matrix camProjMat = yReverseMatrix
-                .multiply(matProj)
+        Matrix cameraToWorld = yReverseMatrix
                 .multiply(rotationMatrix)
                 .multiply(translationMatrix);
 
-        List<Triangle> filtered = scene.triangles.stream().filter(t -> {
-            PVector pC = cameraPosition.copy();
-            PVector p0 = t.points[0].copy();
-            PVector vPQ = new PVector(t.points[1].x - t.points[0].x, t.points[1].y - t.points[0].y, t.points[1].z - t.points[0].z);
-            PVector vPR = new PVector(t.points[2].x - t.points[0].x, t.points[2].y - t.points[0].y, t.points[2].z - t.points[0].z);
+        PVector cco = cameraToWorld.multiply(cameraOrigin);
+        loadPixels();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                PVector direction = cameraToWorld.multiply(generateCameraSpacePixel(x, y));
+                Color currentColor = new Color();
+                float currentSolution = Float.POSITIVE_INFINITY;
+                boolean solutionFound = false;
+                for (Sphere sphere : sphereList) {
+                    float x1 = cco.x;
+                    float y1 = cco.y;
+                    float z1 = cco.z;
 
-            PVector normal = new PVector();
-            PVector.cross(vPQ, vPR, normal);
+                    float x2 = direction.x;
+                    float y2 = direction.y;
+                    float z2 = direction.z;
 
-            return PVector.dot(normal, PVector.sub(pC, p0)) > 0;
-        })
-                .peek(t -> t.projectedPoints = camProjMat.multiply(t.points)).filter(t -> t.projectedPoints != null)
-                .map(this::scaleIntoViewWithReturn)
-                .collect(Collectors.toList());
+                    float x3 = sphere.origin.x;
+                    float y3 = sphere.origin.y;
+                    float z3 = sphere.origin.z;
 
-        try {
-            scene.triangles.sort((t1, t2) -> {
-                PVector pC = cameraPosition.copy();
-                int count0 = 0;
-                int count1 = 0;
+                    float r = sphere.radius;
 
-                // First Run
-                PVector p0 = t2.points[0].copy();
-                PVector vPQ = new PVector(t2.points[1].x - t2.points[0].x, t2.points[1].y - t2.points[0].y, t2.points[1].z - t2.points[0].z);
-                PVector vPR = new PVector(t2.points[2].x - t2.points[0].x, t2.points[2].y - t2.points[0].y, t2.points[2].z - t2.points[0].z);
+                    float a = (float) (Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) + Math.pow(z2 - z1, 2));
 
-                PVector normal = new PVector();
-                PVector.cross(vPQ, vPR, normal);
+                    float b = 2 * (((x2 - x1) * (x1 - x3)) + ((y2 - y1) * (y1 - y3)) + ((z2 - z1) * (z1 - z3)));
 
-                for (PVector point : t1.points) {
-                    PVector l0 = point.copy();
-                    PVector l = PVector.sub(pC, l0);
+                    float c = (float) (Math.pow(x3, 2) + Math.pow(y3, 2) + Math.pow(z3, 2) + Math.pow(x1, 2) + Math.pow(y1, 2) + Math.pow(z1, 2) - (2 * ((x3 * x1) + (y3 * y1) + (z3 * z1))) - Math.pow(r, 2));
 
-                    float topPart = PVector.dot(PVector.sub(p0, l0), normal);
-                    float bottomPart = PVector.dot(l, normal);
+                    float part = (float) (Math.pow(b, 2) - (4 * a * c));
 
-                    if (bottomPart == 0) {
+                    float solution = Float.POSITIVE_INFINITY;
+                    if (part < 0f) {
                         continue;
+                    } else if (part == 0f) {
+                        solution = (-b) / (2 * a);
+                    } else if (part > 0f) {
+                        float s1 = (float) ((-b) + Math.sqrt(part));
+                        float s2 = (float) ((-b) - Math.sqrt(part));
+
+                        if (s1 >= 0 && s1 < s2) solution = s1;
+                        else if (s2 >= 0 && s2 < s1) solution = s2;
+                        else continue;
                     }
 
-                    float d = topPart / bottomPart;
-
-                    PVector pI = PVector.add(l0, PVector.mult(l, d));
-
-                    PVector v0 = PVector.sub(l0, pC);
-                    PVector v1 = PVector.sub(pI, pC);
-
-                    if (PVector.dot(v0, v1) < 0) continue;
-
-                    float pC_l0 = pC.dist(l0);
-                    float pC_pI = pC.dist(pI);
-
-                    if (pC_l0 < pC_pI) count0++;
-                }
-
-                // Second Run
-                p0 = t1.points[0].copy();
-                vPQ = new PVector(t1.points[1].x - t1.points[0].x, t1.points[1].y - t1.points[0].y, t1.points[1].z - t1.points[0].z);
-                vPR = new PVector(t1.points[2].x - t1.points[0].x, t1.points[2].y - t1.points[0].y, t1.points[2].z - t1.points[0].z);
-
-                normal = new PVector();
-                PVector.cross(vPQ, vPR, normal);
-
-                for (PVector point : t2.points) {
-                    PVector l0 = point.copy();
-                    PVector l = PVector.sub(pC, l0);
-
-                    float topPart = PVector.dot(PVector.sub(p0, l0), normal);
-                    float bottomPart = PVector.dot(l, normal);
-
-                    if (bottomPart == 0) {
-                        continue;
+                    if (solution < currentSolution) {
+                        currentSolution = solution;
+                        currentColor = sphere.color;
+                        solutionFound = true;
                     }
-
-                    float d = topPart / bottomPart;
-
-                    PVector pI = PVector.add(l0, PVector.mult(l, d));
-
-                    PVector v0 = PVector.sub(l0, pC);
-                    PVector v1 = PVector.sub(pI, pC);
-
-                    if (PVector.dot(v0, v1) < 0) continue;
-
-                    float pC_l0 = pC.dist(l0);
-                    float pC_pI = pC.dist(pI);
-
-                    if (pC_l0 < pC_pI) count1++;
                 }
 
-                return Integer.compare(count0, count1);
-            });
-        } catch (Exception ignored) {
-            System.out.println("PANIC!!!");
-        }
+                int idx = x + (width * y);
 
-        int tr_count = 0;
-        for (Triangle t : filtered) {
-
-
-            switch (t.color) {
-                case "red" -> fill(255, 0, 0);
-                case "green" -> fill(0, 255, 0);
-                case "blue" -> fill(0, 0, 255);
-                default -> fill(0);
+                if(solutionFound) pixels[idx] = color(currentColor.r, currentColor.g, currentColor.b);
             }
-            strokeWeight(1);
-            triangle(
-                    t.projectedPoints[0].x, t.projectedPoints[0].y,
-                    t.projectedPoints[1].x, t.projectedPoints[1].y,
-                    t.projectedPoints[2].x, t.projectedPoints[2].y
-            );
-
-            tr_count++;
         }
-        strokeWeight(2);
-        fill(255);
-        text("Triangles on screen: " + tr_count, 10, 90);
+        updatePixels();
     }
 
     private void keyBoardRoutine() {
@@ -219,14 +153,14 @@ public class Morpheus extends PApplet {
                         case RIGHT -> cameraRotation.y -= rv;
                         case UP -> cameraRotation.x += rv;
                         case DOWN -> cameraRotation.x -= rv;
-                        case SHIFT -> cameraPosition.add(invRotationMatrix.multiply(mvy));
-                        case CONTROL -> cameraPosition.sub(invRotationMatrix.multiply(mvy));
+                        case SHIFT -> cameraPosition.sub(mvy);
+                        case CONTROL -> cameraPosition.add(mvy);
                     }
                 }
-                case 'w' -> cameraPosition.add(invRotationMatrix.multiply(mvz));
-                case 's' -> cameraPosition.sub(invRotationMatrix.multiply(mvz));
-                case 'a' -> cameraPosition.sub(invRotationMatrix.multiply(mvx));
-                case 'd' -> cameraPosition.add(invRotationMatrix.multiply(mvx));
+                case 'w' -> cameraPosition.add(mvz);
+                case 's' -> cameraPosition.sub(mvz);
+                case 'a' -> cameraPosition.add(mvx);
+                case 'd' -> cameraPosition.sub(mvx);
                 case 'q' -> cameraRotation.z -= rv;
                 case 'e' -> cameraRotation.z += rv;
                 case 'r' -> fFov -= fv;
@@ -280,5 +214,27 @@ public class Morpheus extends PApplet {
         t.projectedPoints[2].y *= 0.5f * (float) height;
 
         return t;
+    }
+
+    private float pixelNDCx(float x) {
+        return (x + 0.5f) / width;
+    }
+
+    private float pixelNDCy(float y) {
+        return (y + 0.5f) / height;
+    }
+
+
+
+    private float pixelScreenX(int x) {
+        return ((2 * pixelNDCx(x)) - 1) * aspectRatio * (float) Math.tan(Math.toRadians(fFov) / 2);
+    }
+
+    private float pixelScreenY(int y) {
+        return (1 - (2 * pixelNDCy(y))) * (float) Math.tan(Math.toRadians(fFov) / 2);
+    }
+
+    private PVector generateCameraSpacePixel(int x, int y) {
+        return new PVector(pixelScreenX(x), pixelScreenY(y), -1);
     }
 }
